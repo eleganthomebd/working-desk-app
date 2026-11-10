@@ -27,6 +27,8 @@ public class MainActivity extends Activity {
             return;
         }
         Jobs.ensure(this);
+        new Thread(() -> Updater.check(getApplicationContext())).start();   // for next launch
+        if (Updater.pending(this)) { Updater.show(this); return; }
         twa = new TwaLauncher(this);
         twa.launch(Uri.parse(Store.DESK_URL));
         launched = true;

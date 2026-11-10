@@ -10,13 +10,14 @@ android {
         applicationId 'com.eleganthomebd.workingdesk'
         minSdk 26
         targetSdk 34
-        versionCode 1
-        versionName '1.0'
+        versionCode 2
+        versionName '1.1'
     }
 
     signingConfigs {
         release {
-            storeFile file(System.getenv('KS_PATH') ?: 'release.jks')
+            storeFile file(System.getenv('KS_PATH') ?: 'release.p12')
+            storeType 'pkcs12'
             storePassword System.getenv('KS_PASS')
             keyAlias 'workingdesk'
             keyPassword System.getenv('KS_PASS')

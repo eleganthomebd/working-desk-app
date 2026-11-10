@@ -64,7 +64,7 @@ public class SetupActivity extends Activity {
         box.addView(label("২. SMS পড়ার অনুমতি"));
         box.addView(button("SMS অনুমতি দিন", "#34A853", v ->
                 requestPermissions(new String[]{Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS}, REQ)), full());
-        box.addView(text("“Restricted setting” লেখা এলে: নিচের বোতাম → ⋮ (উপরে ডানে) → Allow restricted settings → ফিরে এসে আবার অনুমতি দিন।", 13, false, "#B45309"));
+        box.addView(text("অনুমতি আটকে গেলে: ফোনের Settings > Apps > Working Desk খুলে উপরে ডানের ⋮ চাপুন, Allow restricted settings দিন, তারপর এখানে ফিরে আবার অনুমতি দিন।", 13, false, "#B45309"));
         box.addView(button("App info খুলুন", "#5F6368", v ->
                 startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName())))), full());
 

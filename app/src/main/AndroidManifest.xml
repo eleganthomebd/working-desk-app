@@ -13,6 +13,8 @@
         android:label="Working Desk"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
+        <meta-data android:name="asset_statements" android:resource="@string/asset_statements" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

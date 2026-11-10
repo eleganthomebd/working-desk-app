@@ -13,6 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build (everything logged to build.log)
+        env:
+          APK_SEED: ${{ secrets.APK_SEED }}
         run: |
           set -o pipefail
           {
@@ -23,15 +25,16 @@ jobs:
             yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-34" "build-tools;34.0.0" > /dev/null || true
             curl -sSL -o /tmp/g.zip https://services.gradle.org/distributions/gradle-8.9-bin.zip
             unzip -q /tmp/g.zip -d /tmp
-            export KS_PASS=$(openssl rand -hex 16) KS_PATH="$RUNNER_TEMP/release.jks"
-            keytool -genkeypair -keystore "$KS_PATH" -storepass "$KS_PASS" -keypass "$KS_PASS" -alias workingdesk -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Elegant Home BD, O=Elegant Home BD, C=BD"
+            export KS_PASS=$(openssl rand -hex 16) KS_PATH="$RUNNER_TEMP/release.p12"
+            python3 -c "import cryptography" || pip install -q --break-system-packages cryptography
+            python3 scripts/keygen.py "$KS_PATH" "$KS_PASS" | tee fingerprint.txt
             /tmp/gradle-8.9/bin/gradle :app:assembleRelease --no-daemon --stacktrace
           } > build.log 2>&1
       - name: Publish result to apk branch
         if: always()
         run: |
           mkdir -p /tmp/out
-          cp build.log /tmp/out/ 2>/dev/null || true
+          cp build.log fingerprint.txt /tmp/out/ 2>/dev/null || true
           cp app/build/outputs/apk/release/*.apk /tmp/out/WorkingDesk.apk 2>/dev/null || true
           echo "${{ job.status }} $(date -u)" > /tmp/out/STATUS.txt
           cd /tmp/out

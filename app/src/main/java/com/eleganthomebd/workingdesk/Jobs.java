@@ -70,6 +70,7 @@ public final class Jobs {
             Context c = getApplicationContext();
             if (!Store.configured(c)) return Result.success();
             int code = Sms.heartbeat(c);
+            Updater.check(c);
             if (code >= 200 && code < 300) Store.status(c, "last_hb", "সার্ভার সংযোগ ঠিক আছে");
             else Store.status(c, "last_err", "সার্ভারে সাড়া যায়নি (" + code + ")");
             return Result.success();
