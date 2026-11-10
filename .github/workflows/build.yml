@@ -9,25 +9,24 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - uses: android-actions/setup-android@v3
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
-      - name: One-time signing key (lives only inside this build)
+      - name: Build (everything logged to build.log)
         run: |
-          echo "KS_PASS=$(openssl rand -hex 16)" >> "$GITHUB_ENV"
-          echo "KS_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
-      - name: Build
-        run: |
-          keytool -genkeypair -keystore "$KS_PATH" -storepass "$KS_PASS" -keypass "$KS_PASS" -alias workingdesk -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Elegant Home BD, O=Elegant Home BD, C=BD"
-          gradle :app:assembleRelease --no-daemon --stacktrace > build.log 2>&1 || (tail -150 build.log; exit 1)
+          set -o pipefail
+          {
+            set -ex
+            export JAVA_HOME="$JAVA_HOME_17_X64"
+            echo "ANDROID_HOME=$ANDROID_HOME JAVA_HOME=$JAVA_HOME"
+            ls "$ANDROID_HOME/platforms" "$ANDROID_HOME/build-tools" || true
+            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-34" "build-tools;34.0.0" > /dev/null || true
+            curl -sSL -o /tmp/g.zip https://services.gradle.org/distributions/gradle-8.9-bin.zip
+            unzip -q /tmp/g.zip -d /tmp
+            export KS_PASS=$(openssl rand -hex 16) KS_PATH="$RUNNER_TEMP/release.jks"
+            keytool -genkeypair -keystore "$KS_PATH" -storepass "$KS_PASS" -keypass "$KS_PASS" -alias workingdesk -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Elegant Home BD, O=Elegant Home BD, C=BD"
+            /tmp/gradle-8.9/bin/gradle :app:assembleRelease --no-daemon --stacktrace
+          } > build.log 2>&1
       - name: Publish result to apk branch
         if: always()
         run: |
