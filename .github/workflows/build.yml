@@ -1,5 +1,11 @@
 name: build-apk
-on: workflow_dispatch
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -14,16 +20,23 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Signing key
-        run: echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
-        env:
-          KS_B64: ${{ secrets.KS_B64 }}
+      - name: One-time signing key (lives only inside this build)
+        run: |
+          echo "KS_PASS=$(openssl rand -hex 16)" >> "$GITHUB_ENV"
+          echo "KS_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
       - name: Build
-        run: gradle :app:assembleRelease --no-daemon
-        env:
-          KS_PATH: ${{ runner.temp }}/release.jks
-          KS_PASS: ${{ secrets.KS_PASS }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: working-desk-apk
-          path: app/build/outputs/apk/release/*.apk
+        run: |
+          keytool -genkeypair -keystore "$KS_PATH" -storepass "$KS_PASS" -keypass "$KS_PASS" -alias workingdesk -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Elegant Home BD, O=Elegant Home BD, C=BD"
+          gradle :app:assembleRelease --no-daemon --stacktrace > build.log 2>&1 || (tail -150 build.log; exit 1)
+      - name: Publish result to apk branch
+        if: always()
+        run: |
+          mkdir -p /tmp/out
+          cp build.log /tmp/out/ 2>/dev/null || true
+          cp app/build/outputs/apk/release/*.apk /tmp/out/WorkingDesk.apk 2>/dev/null || true
+          echo "${{ job.status }} $(date -u)" > /tmp/out/STATUS.txt
+          cd /tmp/out
+          git init -q -b apk
+          git config user.name "build-bot"; git config user.email "build-bot@users.noreply.github.com"
+          git add -A; git commit -qm "build ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" apk
