@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="sms_setup"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/setup_short">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.eleganthomebd.workingdesk"
+            android:targetClass="com.eleganthomebd.workingdesk.SetupActivity" />
+    </shortcut>
+</shortcuts>
