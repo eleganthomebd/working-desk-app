@@ -42,10 +42,50 @@ public final class Jobs {
         WorkManager wm = WorkManager.getInstance(c);
         wm.enqueueUniquePeriodicWork("hb", ExistingPeriodicWorkPolicy.KEEP,
                 new PeriodicWorkRequest.Builder(HeartbeatWorker.class, 30, TimeUnit.MINUTES).setConstraints(net()).build());
+        // 🔁 v1.4: every 15 min re-check the last 24 h of SMS — anything the phone failed to send goes now
+        wm.enqueueUniquePeriodicWork("sweep", ExistingPeriodicWorkPolicy.KEEP,
+                new PeriodicWorkRequest.Builder(SweepWorker.class, 15, TimeUnit.MINUTES).setConstraints(net()).build());
+        sweepNow(c);
         if (!Store.p(c).getBoolean("backfill_done", false)) {
             wm.enqueueUniqueWork("backfill", ExistingWorkPolicy.KEEP,
                     new OneTimeWorkRequest.Builder(BackfillWorker.class).setConstraints(net())
                             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 1, TimeUnit.MINUTES).build());
+        }
+    }
+
+    /** One sweep right away (app opened / phone rebooted). */
+    static void sweepNow(Context c) {
+        WorkManager.getInstance(c).enqueueUniqueWork("sweep1", ExistingWorkPolicy.REPLACE,
+                new OneTimeWorkRequest.Builder(SweepWorker.class).setConstraints(net()).build());
+    }
+
+    /** Sends the allowed SMS of the last 24 h that this phone hasn't sent yet (server ignores duplicates too). */
+    public static class SweepWorker extends Worker {
+        public SweepWorker(@NonNull Context c, @NonNull WorkerParameters p) { super(c, p); }
+
+        @NonNull @Override public Result doWork() {
+            Context c = getApplicationContext();
+            if (!Store.configured(c) || !Sms.permOk(c)) return Result.success();
+            long since = System.currentTimeMillis() - 24 * 3600 * 1000L;
+            int sent = 0;
+            try (Cursor q = c.getContentResolver().query(Uri.parse("content://sms/inbox"),
+                    new String[]{"address", "body", "date"}, "date >= ?", new String[]{String.valueOf(since)}, "date ASC")) {
+                if (q == null) return Result.success();
+                while (q.moveToNext()) {
+                    String a = q.getString(0), b = q.getString(1);
+                    long at = q.getLong(2);
+                    if (!Sms.allowed(a, b) || Store.wasSent(c, a, b)) continue;
+                    int code = Sms.post(c, a, b, at, false);
+                    if (code == 401) { Store.status(c, "last_err", "চাবি ভুল (401) — সেটআপে আবার লিংক দিন"); return Result.success(); }
+                    if (code < 200 || code >= 300) return Result.retry();
+                    Store.markSent(c, a, b);
+                    sent++;
+                }
+            } catch (SecurityException e) {
+                return Result.success();
+            }
+            if (sent > 0) Store.status(c, "last_ok", "মিস হওয়া " + sent + "টা SMS পাঠানো হয়েছে");
+            return Result.success();
         }
     }
 
@@ -56,7 +96,7 @@ public final class Jobs {
             Context c = getApplicationContext();
             String from = getInputData().getString("from"), msg = getInputData().getString("msg");
             int code = Sms.post(c, from, msg, getInputData().getLong("at", System.currentTimeMillis()), false);
-            if (code >= 200 && code < 300) { Store.addSent(c); Store.status(c, "last_ok", "SMS পাঠানো হয়েছে"); return Result.success(); }
+            if (code >= 200 && code < 300) { Store.addSent(c); Store.markSent(c, from, msg); Store.status(c, "last_ok", "SMS পাঠানো হয়েছে"); return Result.success(); }
             if (code == 401) { Store.status(c, "last_err", "চাবি ভুল (401) — সেটআপে আবার লিংক দিন"); return Result.failure(); }
             Store.status(c, "last_err", "পাঠানো যায়নি (" + code + ") — আবার চেষ্টা হবে");
             return getRunAttemptCount() < 20 ? Result.retry() : Result.failure();

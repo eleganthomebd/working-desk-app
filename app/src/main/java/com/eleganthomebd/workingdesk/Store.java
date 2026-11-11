@@ -54,6 +54,26 @@ final class Store {
         sp.edit().putInt("sent", sp.getInt("sent", 0) + 1).apply();
     }
 
+    /** Short fingerprint of one SMS (sender + text) — so the sweep doesn't resend what already went. */
+    static String fp(String from, String msg) {
+        String f = from == null ? "" : from.replaceAll("[\\s-]", "");
+        return Integer.toHexString((f + "|" + (msg == null ? "" : msg.replaceAll("\\s+", " ").trim())).hashCode());
+    }
+
+    static synchronized boolean wasSent(Context c, String from, String msg) {
+        return ("," + p(c).getString("sent_fp", "") + ",").contains("," + fp(from, msg) + ",");
+    }
+
+    /** Keeps the last ~300 fingerprints. */
+    static synchronized void markSent(Context c, String from, String msg) {
+        String k = fp(from, msg), cur = p(c).getString("sent_fp", "");
+        if (("," + cur + ",").contains("," + k + ",")) return;
+        String n = cur.isEmpty() ? k : cur + "," + k;
+        String[] a = n.split(",");
+        if (a.length > 300) n = String.join(",", java.util.Arrays.copyOfRange(a, a.length - 300, a.length));
+        p(c).edit().putString("sent_fp", n).apply();
+    }
+
     static String now() {
         SimpleDateFormat f = new SimpleDateFormat("d MMM, h:mm a", Locale.ENGLISH);
         f.setTimeZone(TimeZone.getTimeZone("Asia/Dhaka"));
