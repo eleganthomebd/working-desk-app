@@ -60,7 +60,7 @@ final class Sms {
     /** "I'm alive" ping (server shows a warning when the phone goes quiet). */
     static int heartbeat(Context c) {
         try {
-            HttpURLConnection h = (HttpURLConnection) new URL(Store.endpoint(c) + "?hb=1&via=app&k=" + enc(Store.key(c))).openConnection();
+            HttpURLConnection h = (HttpURLConnection) new URL(Store.endpoint(c) + "?hb=1&via=app&perm=" + (permOk(c) ? 1 : 0) + "&ver=" + Updater.current(c) + "&k=" + enc(Store.key(c))).openConnection();
             h.setConnectTimeout(20000);
             h.setReadTimeout(20000);
             int code = h.getResponseCode();
@@ -69,6 +69,11 @@ final class Sms {
         } catch (Exception e) {
             return -1;
         }
+    }
+
+    static boolean permOk(Context c) {
+        return c.checkSelfPermission(android.Manifest.permission.RECEIVE_SMS) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            && c.checkSelfPermission(android.Manifest.permission.READ_SMS) == android.content.pm.PackageManager.PERMISSION_GRANTED;
     }
 
     private static void drain(HttpURLConnection h) {
