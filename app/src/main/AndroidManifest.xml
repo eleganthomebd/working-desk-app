@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- 🔔 ১১ নভে ২০২৬: নোটিফিকেশন Chrome-এর নামে না এসে "Working Desk" অ্যাপের নামে আসে (TWA notification delegation) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="false"
@@ -37,6 +39,24 @@
             android:name=".SetupActivity"
             android:exported="true"
             android:label="SMS সেটআপ" />
+
+        <!-- Chrome foysal.eleganthomebd.com-এর পুশ এই অ্যাপকে দেয় — অ্যাপের নাম/আইকনে দেখায়, Chrome-এর "Possible spam" লেবেল ছাড়া -->
+        <service
+            android:name="com.google.androidbrowserhelper.trusted.DelegationService"
+            android:enabled="true"
+            android:exported="true">
+            <meta-data
+                android:name="android.support.customtabs.trusted.SMALL_ICON"
+                android:resource="@drawable/ic_stat_desk" />
+            <intent-filter>
+                <action android:name="android.support.customtabs.trusted.TRUSTED_WEB_ACTIVITY_SERVICE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
+
+        <activity
+            android:name="com.google.androidbrowserhelper.trusted.NotificationPermissionRequestActivity"
+            android:exported="false" />
 
         <receiver
             android:name=".SmsReceiver"

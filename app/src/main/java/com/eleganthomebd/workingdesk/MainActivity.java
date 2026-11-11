@@ -29,7 +29,20 @@ public class MainActivity extends Activity {
         Jobs.ensure(this);
         new Thread(() -> { Updater.check(getApplicationContext()); Jobs.flush(getApplicationContext(), 60000); }).start();   // update check + মিস হওয়া SMS এখনই
         if (Updater.pending(this)) { Updater.show(this); return; }
+        // 🔔 Android 13+: নোটিফিকেশন অ্যাপের নামে আসার জন্য অ্যাপের নিজের অনুমতি লাগে — না থাকলে একবার চাই, তারপর ডেস্ক খোলে
+        if (android.os.Build.VERSION.SDK_INT >= 33
+                && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                && !Store.p(this).getBoolean("ntf_asked", false)) {
+            Store.p(this).edit().putBoolean("ntf_asked", true).apply();
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 7);
+            return;
+        }
         openDesk(getIntent());
+    }
+
+    @Override public void onRequestPermissionsResult(int code, String[] perms, int[] res) {
+        super.onRequestPermissionsResult(code, perms, res);
+        if (code == 7 && !launched) openDesk(getIntent());
     }
 
     /** Opens the desk — the exact page if a foysal. link brought us here. */
