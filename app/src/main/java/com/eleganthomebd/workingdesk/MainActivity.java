@@ -29,9 +29,22 @@ public class MainActivity extends Activity {
         Jobs.ensure(this);
         new Thread(() -> Updater.check(getApplicationContext())).start();   // for next launch
         if (Updater.pending(this)) { Updater.show(this); return; }
+        openDesk(getIntent());
+    }
+
+    /** Opens the desk — the exact page if a foysal. link brought us here. */
+    private void openDesk(Intent i) {
+        Uri u = i != null ? i.getData() : null;
+        if (u == null || !"foysal.eleganthomebd.com".equals(u.getHost())) u = Uri.parse(Store.DESK_URL);
+        if (twa != null) twa.destroy();
         twa = new TwaLauncher(this);
-        twa.launch(Uri.parse(Store.DESK_URL));
+        twa.launch(u);
         launched = true;
+    }
+
+    @Override protected void onNewIntent(Intent i) {
+        super.onNewIntent(i);
+        if (Store.configured(this) && smsOk(this) && i != null && i.getData() != null) openDesk(i);
     }
 
     @Override protected void onRestart() {
