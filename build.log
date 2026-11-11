@@ -1,0 +1,119 @@
++ export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
++ JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
++ echo 'ANDROID_HOME=/usr/local/lib/android/sdk JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64'
+ANDROID_HOME=/usr/local/lib/android/sdk JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
++ ls /usr/local/lib/android/sdk/platforms /usr/local/lib/android/sdk/build-tools
+/usr/local/lib/android/sdk/build-tools:
+34.0.0
+35.0.0
+35.0.1
+36.0.0
+36.1.0
+37.0.0
+
+/usr/local/lib/android/sdk/platforms:
+android-34
+android-34-ext10
+android-34-ext11
+android-34-ext12
+android-34-ext8
+android-35
+android-35-ext14
+android-35-ext15
+android-36
+android-36-ext18
+android-36-ext19
+android-36.1
+android-37.0
+android-37.1
+android-37.2
+android-37.2-beta1
+android-37.2-beta2
+android-37.2-beta3
++ yes
++ /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
+yes: standard output: Broken pipe
++ true
++ curl -sSL -o /tmp/g.zip https://services.gradle.org/distributions/gradle-8.9-bin.zip
++ unzip -q /tmp/g.zip -d /tmp
+++ openssl rand -hex 16
++ export KS_PASS=5b14823fb44c40e4f2619e3c019fb00b KS_PATH=/home/runner/work/_temp/release.p12
++ KS_PASS=5b14823fb44c40e4f2619e3c019fb00b
++ KS_PATH=/home/runner/work/_temp/release.p12
++ python3 -c 'import cryptography'
++ python3 scripts/keygen.py /home/runner/work/_temp/release.p12 5b14823fb44c40e4f2619e3c019fb00b
++ tee fingerprint.txt
+cert sha256: 86:2F:38:55:0E:A6:70:87:7E:7E:9D:F8:48:CF:3E:07:C5:DA:08:7F:26:7A:B2:73:8D:52:76:5B:90:AF:7A:51
++ /tmp/gradle-8.9/bin/gradle :app:assembleRelease --no-daemon --stacktrace
+
+Welcome to Gradle 8.9!
+
+Here are the highlights of this release:
+ - Enhanced Error and Warning Messages
+ - IDE Integration Improvements
+ - Daemon JVM Information
+
+For more details see https://docs.gradle.org/8.9/release-notes.html
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preReleaseBuild UP-TO-DATE
+> Task :app:javaPreCompileRelease
+> Task :app:generateReleaseResValues
+> Task :app:checkReleaseAarMetadata
+> Task :app:mapReleaseSourceSetPaths
+> Task :app:generateReleaseResources
+> Task :app:packageReleaseResources
+> Task :app:mergeReleaseResources
+> Task :app:createReleaseCompatibleScreenManifests
+> Task :app:extractDeepLinksRelease
+> Task :app:parseReleaseLocalResources
+> Task :app:processReleaseMainManifest
+> Task :app:processReleaseManifest
+> Task :app:extractProguardFiles
+> Task :app:mergeReleaseJniLibFolders
+> Task :app:mergeReleaseNativeLibs NO-SOURCE
+> Task :app:stripReleaseDebugSymbols NO-SOURCE
+> Task :app:extractReleaseNativeSymbolTables NO-SOURCE
+> Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:desugarReleaseFileDependencies
+> Task :app:mergeReleaseStartupProfile
+> Task :app:processReleaseManifestForPackage
+> Task :app:checkReleaseDuplicateClasses
+> Task :app:processReleaseResources
+> Task :app:mergeExtDexRelease
+
+> Task :app:compileReleaseJavaWithJavac
+Note: /home/runner/work/working-desk-app/working-desk-app/app/src/main/java/com/eleganthomebd/workingdesk/Updater.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :app:generateReleaseLintVitalReportModel
+> Task :app:dexBuilderRelease
+> Task :app:mergeReleaseArtProfile
+> Task :app:mergeReleaseGlobalSynthetics
+> Task :app:mergeReleaseShaders
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseAssets
+> Task :app:compressReleaseAssets
+> Task :app:extractReleaseVersionControlInfo
+> Task :app:processReleaseJavaRes NO-SOURCE
+> Task :app:optimizeReleaseResources
+> Task :app:mergeReleaseJavaResource
+> Task :app:collectReleaseDependencies
+> Task :app:sdkReleaseDependencyData
+> Task :app:validateSigningRelease
+> Task :app:writeReleaseAppMetadata
+> Task :app:writeReleaseSigningConfigVersions
+> Task :app:mergeDexRelease
+> Task :app:compileReleaseArtProfile
+> Task :app:packageRelease
+> Task :app:createReleaseApkListingFileRedirect
+> Task :app:lintVitalAnalyzeRelease
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
+> Task :app:assembleRelease
+
+BUILD SUCCESSFUL in 53s
+43 actionable tasks: 43 executed
