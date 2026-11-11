@@ -27,7 +27,7 @@ public class MainActivity extends Activity {
             return;
         }
         Jobs.ensure(this);
-        new Thread(() -> Updater.check(getApplicationContext())).start();   // for next launch
+        new Thread(() -> { Updater.check(getApplicationContext()); Jobs.flush(getApplicationContext(), 60000); }).start();   // update check + মিস হওয়া SMS এখনই
         if (Updater.pending(this)) { Updater.show(this); return; }
         openDesk(getIntent());
     }

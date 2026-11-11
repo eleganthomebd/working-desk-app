@@ -31,6 +31,7 @@ public class SmsReceiver extends BroadcastReceiver {
                     Store.addSent(app);
                     Store.markSent(app, from, msg);
                     Store.status(app, "last_ok", "SMS পাঠানো হয়েছে");
+                    Jobs.flush(app, 6000);   // নেট আছে — আগে মিস হওয়া SMS থাকলে এখনই পাঠাই
                 } else {
                     Jobs.sendLater(app, from, msg, at);   // retry in the background
                 }

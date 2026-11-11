@@ -59,33 +59,42 @@ public final class Jobs {
                 new OneTimeWorkRequest.Builder(SweepWorker.class).setConstraints(net()).build());
     }
 
-    /** Sends the allowed SMS of the last 24 h that this phone hasn't sent yet (server ignores duplicates too). */
+    /**
+     * Sends the allowed SMS of the last 24 h that this phone hasn't sent yet (server ignores duplicates too).
+     * One SMS failing never blocks the others. Returns {sent, stillPending}.
+     */
+    static int[] flush(Context c, long budgetMs) {
+        int sent = 0, left = 0;
+        long end = System.currentTimeMillis() + budgetMs;
+        if (!Store.configured(c) || !Sms.permOk(c)) return new int[]{0, 0};
+        long since = System.currentTimeMillis() - 24 * 3600 * 1000L;
+        try (Cursor q = c.getContentResolver().query(Uri.parse("content://sms/inbox"),
+                new String[]{"address", "body", "date"}, "date >= ?", new String[]{String.valueOf(since)}, "date ASC")) {
+            if (q == null) return new int[]{0, 0};
+            while (q.moveToNext()) {
+                String a = q.getString(0), b = q.getString(1);
+                long at = q.getLong(2);
+                if (!Sms.allowed(a, b) || Store.wasSent(c, a, b)) continue;
+                if (System.currentTimeMillis() > end) { left++; continue; }
+                int code = Sms.post(c, a, b, at, false);
+                if (code == 401) { Store.status(c, "last_err", "চাবি ভুল (401) — সেটআপে আবার লিংক দিন"); left++; continue; }
+                if (code >= 200 && code < 300) { Store.markSent(c, a, b); sent++; }
+                else left++;   // পরের বার আবার — বাকিগুলো থামে না
+            }
+        } catch (SecurityException e) {
+            return new int[]{sent, left};
+        }
+        Store.p(c).edit().putInt("pend", left).apply();
+        if (sent > 0) Store.status(c, "last_ok", "মিস হওয়া " + sent + "টা SMS পাঠানো হয়েছে");
+        return new int[]{sent, left};
+    }
+
     public static class SweepWorker extends Worker {
         public SweepWorker(@NonNull Context c, @NonNull WorkerParameters p) { super(c, p); }
 
         @NonNull @Override public Result doWork() {
-            Context c = getApplicationContext();
-            if (!Store.configured(c) || !Sms.permOk(c)) return Result.success();
-            long since = System.currentTimeMillis() - 24 * 3600 * 1000L;
-            int sent = 0;
-            try (Cursor q = c.getContentResolver().query(Uri.parse("content://sms/inbox"),
-                    new String[]{"address", "body", "date"}, "date >= ?", new String[]{String.valueOf(since)}, "date ASC")) {
-                if (q == null) return Result.success();
-                while (q.moveToNext()) {
-                    String a = q.getString(0), b = q.getString(1);
-                    long at = q.getLong(2);
-                    if (!Sms.allowed(a, b) || Store.wasSent(c, a, b)) continue;
-                    int code = Sms.post(c, a, b, at, false);
-                    if (code == 401) { Store.status(c, "last_err", "চাবি ভুল (401) — সেটআপে আবার লিংক দিন"); return Result.success(); }
-                    if (code < 200 || code >= 300) return Result.retry();
-                    Store.markSent(c, a, b);
-                    sent++;
-                }
-            } catch (SecurityException e) {
-                return Result.success();
-            }
-            if (sent > 0) Store.status(c, "last_ok", "মিস হওয়া " + sent + "টা SMS পাঠানো হয়েছে");
-            return Result.success();
+            int[] r = flush(getApplicationContext(), 8 * 60 * 1000L);
+            return r[1] > 0 && getRunAttemptCount() < 10 ? Result.retry() : Result.success();
         }
     }
 
@@ -109,6 +118,7 @@ public final class Jobs {
         @NonNull @Override public Result doWork() {
             Context c = getApplicationContext();
             if (!Store.configured(c)) return Result.success();
+            flush(c, 3 * 60 * 1000L);
             int code = Sms.heartbeat(c);
             Updater.check(c);
             if (code >= 200 && code < 300) Store.status(c, "last_hb", "সার্ভার সংযোগ ঠিক আছে");

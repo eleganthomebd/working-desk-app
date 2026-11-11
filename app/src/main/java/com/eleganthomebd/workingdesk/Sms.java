@@ -60,7 +60,7 @@ final class Sms {
     /** "I'm alive" ping (server shows a warning when the phone goes quiet). */
     static int heartbeat(Context c) {
         try {
-            HttpURLConnection h = (HttpURLConnection) new URL(Store.endpoint(c) + "?hb=1&via=app&perm=" + (permOk(c) ? 1 : 0) + "&ver=" + Updater.current(c) + "&k=" + enc(Store.key(c))).openConnection();
+            HttpURLConnection h = (HttpURLConnection) new URL(Store.endpoint(c) + "?hb=1&via=app&perm=" + (permOk(c) ? 1 : 0) + "&ver=" + Updater.current(c) + "&pend=" + Store.p(c).getInt("pend", 0) + "&k=" + enc(Store.key(c))).openConnection();
             h.setConnectTimeout(20000);
             h.setReadTimeout(20000);
             int code = h.getResponseCode();
